@@ -24,7 +24,7 @@ QWebChannel <- R6::R6Class("QWebChannel", list(
   execCallbacks = list(),
 
   #' @field execId Identity number of QObject method excuting.
-  execId = 0L,
+  execId = 1L,
 
   #' @field objects List of QObject which caching object data of C++ side.
   objects = list(),
@@ -53,7 +53,7 @@ QWebChannel <- R6::R6Class("QWebChannel", list(
       else
       if (data$type == QWebChannelMessageTypes['response'])
         {
-          message("'response' message received: ", message$data)
+          self$handleResponse(data)
         }
       else
       if (data$type == QWebChannelMessageTypes['propertyUpdate'])
@@ -66,11 +66,8 @@ QWebChannel <- R6::R6Class("QWebChannel", list(
         }
     })
 
-    # Initialize connection
+    # Initialize QWebChannel and build connection to C++ side
     self$exec(list(type = QWebChannelMessageTypes[['init']]), function(data) {
-      browser()
-
-      message("Initialize success: ", rjson::toJSON(data))
 
       if (!is.null(initCallback)) {
         initCallback(self)
@@ -85,7 +82,6 @@ QWebChannel <- R6::R6Class("QWebChannel", list(
   #' @param data Message data to send
   #' @param callback Function to excute after receiving returned information
   exec = function(data, callback = NULL) {
-    browser()
     if (is.null(callback)) {
       # if no callback is given, send directly
       self$send(data);
@@ -94,7 +90,7 @@ QWebChannel <- R6::R6Class("QWebChannel", list(
 
     if (self$execId == .Machine$integer.max) {
       # Reset
-      self$execId = 0L;
+      self$execId = 1L;
     }
 
     if (!is.null(data[['id']])) {
@@ -103,7 +99,7 @@ QWebChannel <- R6::R6Class("QWebChannel", list(
     }
 
     data[['id']] = self$execId
-    self$execCallbacks[data[['id']]] = callback
+    self$execCallbacks[[data[['id']]]] = callback
     self$send(data)
   },
 
@@ -125,5 +121,18 @@ QWebChannel <- R6::R6Class("QWebChannel", list(
       type = QWebChannelMessageTypes['debug'],
       data = message
     ));
+  },
+
+  #' Handle response type message
+  #'
+  #' @param message Message to handle
+  handleResponse = function(message) {
+    if (is.null(message[['id']])) {
+      warning("Invalid response message received: ", rjson::toJSON(message))
+      return()
+    }
+
+    self$execCallbacks[[ message[['id']] ]](message[['data']])
+    self$execCallbacks[[ message[['id']] ]] <- NULL
   }
 ))
