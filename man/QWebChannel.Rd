@@ -28,6 +28,7 @@ QWebChannel is used to communicate with QWebChannel C++ Client
 \item \href{#method-exec}{\code{QWebChannel$exec()}}
 \item \href{#method-send}{\code{QWebChannel$send()}}
 \item \href{#method-debug}{\code{QWebChannel$debug()}}
+\item \href{#method-handleResponse}{\code{QWebChannel$handleResponse()}}
 \item \href{#method-clone}{\code{QWebChannel$clone()}}
 }
 }
@@ -36,7 +37,7 @@ QWebChannel is used to communicate with QWebChannel C++ Client
 \subsection{Method \code{new()}}{
 Create a new QWebChannel object
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{QWebChannel$new(transport, initCallback)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{QWebChannel$new(transport, initCallback = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -54,7 +55,7 @@ Create a new QWebChannel object
 \subsection{Method \code{exec()}}{
 Record and send message
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{QWebChannel$exec(data, callback)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{QWebChannel$exec(data, callback = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -94,7 +95,23 @@ Send debug message}
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{message}}{Data to send.}
+\item{\code{message}}{Data to send.
+Handle response type message}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-handleResponse"></a>}}
+\subsection{Method \code{handleResponse()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{QWebChannel$handleResponse(message)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{message}}{Message to handle}
 }
 \if{html}{\out{</div>}}
 }

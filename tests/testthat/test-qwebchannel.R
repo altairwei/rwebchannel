@@ -8,7 +8,8 @@ test_that("Try to build connection", {
   })
 
   socket$onError(function(event) {
-    cat("Client failed to connect: ", event$message, "\n")
+    msg = paste("Client failed to connect:", event$message, "\n")
+    cat(msg)
   })
 
   socket$onOpen(function(event) {
@@ -17,5 +18,5 @@ test_that("Try to build connection", {
     })
   })
 
-  socket$connect()
+  #socket$connect()
 })

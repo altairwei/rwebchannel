@@ -40,29 +40,31 @@ QWebChannel <- R6::R6Class("QWebChannel", list(
     self$transport <- transport
 
     # Define message handler
-    self$transport$onMessage(function(message) {
-      data = message$data
+    self$transport$onMessage(function(msg) {
+      data = msg$data
       if (typeof(data) == "character") {
-        data = rjson::fromJSON(data);
+        data = rjson::fromJSON(data)
       }
+      browser()
       # Dispath to different message handler
       if (data$type == QWebChannelMessageTypes['signal'])
         {
-          message("'signal' message received: ", message$data)
+          message("'signal' message received: ", data)
         }
       else
       if (data$type == QWebChannelMessageTypes['response'])
         {
+          message(data)
           self$handleResponse(data)
         }
       else
       if (data$type == QWebChannelMessageTypes['propertyUpdate'])
         {
-          message("'propertyUpdate' message received: ", message$data)
+          message("'propertyUpdate' message received: ", data)
         }
       else
         {
-          warning("invalid message received: ", message$data)
+          warning("invalid message received: ", data)
         }
     })
 
