@@ -171,3 +171,59 @@ test_that("Test addMethod", {
     args = list("test_qobj", list(id = "ObjToSend"), list(id = "ObjToSend2"))
   ))
 })
+
+
+test_that("Test bindGetterSetter", {
+  obj_data = rjson::fromJSON('
+{
+  "properties": [
+    [0, "Title", [1, 2], "Hello World"],
+    [1, "GUID", [1, 2], "7bb5a78d-2f21-44ad-ad50-2f7e52437133"],
+    [2, "Database", [1, 5], {"__QObject*__": true, "data": {}, "id": "{81b0ce6f-a09f-4dcf-bd04-70b332760b33}"}]
+  ]
+}')
+
+  webChannel <- FakeQWebChannel$new()
+  webChannel$exec <- mockery::mock()
+
+  stub(QObject$new, 'addMethod', '')
+  stub(QObject$new, 'addSignal', '', depth = 2)
+
+
+  qobj <- QObject$new("WizDocument", obj_data, webChannel)
+  expect_equal(qobj$Title, "Hello World")
+  expect_equal(qobj$GUID, "7bb5a78d-2f21-44ad-ad50-2f7e52437133")
+
+  qobj$Title <- "Haha"
+  expect_equal(qobj$Title, "Haha")
+  expect_called(webChannel$exec, 1)
+  expect_equal(mock_args(webChannel$exec)[[1]][[1]], list(
+    type = QWebChannelMessageTypes["setProperty"],
+    object = "WizDocument",
+    property = 0,
+    value = "Haha"
+  ))
+
+  qobj$GUID <- "882fb189-6390-420e-8a30-be44fc24a577"
+  expect_equal(qobj$Title, "Haha")
+  expect_called(webChannel$exec, 2)
+  expect_equal(mock_args(webChannel$exec)[[2]][[1]], list(
+    type = QWebChannelMessageTypes["setProperty"],
+    object = "WizDocument",
+    property = 1,
+    value = "882fb189-6390-420e-8a30-be44fc24a577"
+  ))
+
+  obj_to_send <- QObject$new("ObjToSend", list(), webChannel)
+  qobj$Database <- obj_to_send
+  expect_called(webChannel$exec, 3)
+  expect_equal(mock_args(webChannel$exec)[[3]][[1]], list(
+    type = QWebChannelMessageTypes["setProperty"],
+    object = "WizDocument",
+    property = 2,
+    value = list(id = "ObjToSend")
+  ))
+
+  #TODO: expect warings
+  expect_warning(qobj$Title <- NA, "called with undefined value!")
+})

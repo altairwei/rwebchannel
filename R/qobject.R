@@ -20,8 +20,8 @@ QObject <- R6::R6Class("QObject", lock_objects = FALSE,
     },
 
     addMethod = function(methodData) {
-      methodName <-  methodData[[1L]]
-      methodIdx <-  methodData[[2L]]
+      methodName <- methodData[[1L]]
+      methodIdx <- methodData[[2L]]
       self[[methodName]] <- function(...) {
         args_to_send <- list()
         arguments <- list(...)
@@ -44,7 +44,7 @@ QObject <- R6::R6Class("QObject", lock_objects = FALSE,
           args = args_to_send
         ), function(response) {
           if (!is.null(response)) {
-            result <- self$unwrapQObject(response);
+            result <- self$unwrapQObject(response)
             if (!is.null(callback)) {
               callback(result);
             }
@@ -54,7 +54,49 @@ QObject <- R6::R6Class("QObject", lock_objects = FALSE,
     },
 
     bindGetterSetter = function(propertyInfo) {
+      propertyIndex <- propertyInfo[[1L]] + 1L # 1-based indexing
+      propertyName <- propertyInfo[[2L]]
+      notifySignalData <- propertyInfo[[3L]]
 
+      private$propertyCache[[propertyIndex]] <- propertyInfo[[4L]]
+
+      if (!is.null(notifySignalData)) {
+        if (notifySignalData[[1L]] == 1) {
+          # signal name is optimized away, reconstruct the actual name
+          notifySignalData[[1L]] <- paste0(propertyName, "Changed")
+        }
+        private$addSignal(notifySignalData, TRUE)
+      }
+
+      makeActiveBinding(propertyName, function(value) {
+        if (missing(value)) {
+          # Get property
+          propertyValue <- private$propertyCache[[propertyIndex]]
+          if (is.null(propertyValue)) {
+            # This shouldn't happen
+            warning(paste0("Undefined value in property cache for property \"", propertyName, "\" in object ", self$id))
+          }
+
+          return(propertyValue)
+
+        } else {
+          # Set property
+          if (suppressWarnings(is.na(value))) {
+            warning(paste0("Property setter for ", propertyName, " called with undefined value!"))
+          }
+          private$propertyCache[[propertyIndex]] <- value
+          valueToSend <- value
+          if ( "QObject" %in% class(valueToSend) && !is.null(private$webChannel$objects[[valueToSend$id]])) {
+            valueToSend <- list(id = valueToSend$id)
+          }
+          private$webChannel$exec(list(
+              type = QWebChannelMessageTypes["setProperty"],
+              object = self$id,
+              property = propertyIndex - 1L, # Convert to 0-based indexing
+              value = valueToSend
+          ))
+        }
+      }, env = self)
     }
 
   ),
