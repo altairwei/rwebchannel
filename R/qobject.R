@@ -1,10 +1,8 @@
 #' QObject is used to represent C++ Qt objects
 #'
 #' @export
-QObject <- R6::R6Class("QObject",
+QObject <- R6::R6Class("QObject", lock_objects = FALSE,
   private = list(
-    #' @field id The name of object.
-    id = NULL,
     webChannel = NULL,
 
     #' @field objectSignals List of callbacks that get invoked upon signal emission
@@ -22,26 +20,26 @@ QObject <- R6::R6Class("QObject",
     },
 
     addMethod = function(methodData) {
-      methodName <-  methodData[[0]]
-      methodIdx <-  methodData[[1]]
-      self$set("public", methodName, function(...) {
+      methodName <-  methodData[[1L]]
+      methodIdx <-  methodData[[2L]]
+      self[[methodName]] <- function(...) {
         args_to_send <- list()
         arguments <- list(...)
         callback <- NULL
         for (argument in arguments) {
-          if (class(argument) == "function") {
+          if (is.function(argument)) {
             callback <- argument
           } else if (
             "QObject" %in% class(argument) &&
-            !is.null(private$webChannel$objects[[argument[["__id__"]]]])) {
-            args_to_send <- append(args_to_send, list(id = argument[["__id__"]]))
+            !is.null(private$webChannel$objects[[argument$id]])) {
+            args_to_send[[length(args_to_send) + 1]] <- list(id = argument$id)
           } else {
-            args_to_send <- append(args_to_send, argument)
+            args_to_send[[length(args_to_send) + 1]] <- argument
           }
         }
         private$webChannel$exec(list(
           type = QWebChannelMessageTypes["invokeMethod"],
-          object = private$id,
+          object = self$id,
           method = methodIdx,
           args = args_to_send
         ), function(response) {
@@ -52,7 +50,7 @@ QObject <- R6::R6Class("QObject",
             }
           }
         })
-      })
+      }
     },
 
     bindGetterSetter = function(propertyInfo) {
@@ -61,8 +59,11 @@ QObject <- R6::R6Class("QObject",
 
   ),
   public = list(
+    #' @field id The name of object.
+    id = NULL,
+
     initialize = function(name, data, webChannel) {
-      private$id <- name
+      self$id <- name
       private$webChannel <- webChannel
       webChannel$objects[[name]] = self
 
