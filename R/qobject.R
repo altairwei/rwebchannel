@@ -57,8 +57,13 @@ QObject <- R6::R6Class("QObject", lock_objects = FALSE,
       propertyIndex <- propertyInfo[[1L]] + 1L # 1-based indexing
       propertyName <- propertyInfo[[2L]]
       notifySignalData <- propertyInfo[[3L]]
+      propertyInitValue <- propertyInfo[[4L]]
 
-      private$propertyCache[[propertyIndex]] <- propertyInfo[[4L]]
+      if (is.null(propertyInitValue)) {
+        warning(paste0("Undefined initial value for property \"", propertyName, "\" in object ", self$id))
+        propertyInitValue <- NA
+      }
+      private$propertyCache[[propertyIndex]] <- propertyInitValue
 
       if (!is.null(notifySignalData)) {
         if (notifySignalData[[1L]] == 1) {
@@ -81,8 +86,9 @@ QObject <- R6::R6Class("QObject", lock_objects = FALSE,
 
         } else {
           # Set property
-          if (suppressWarnings(is.na(value))) {
-            warning(paste0("Property setter for ", propertyName, " called with undefined value!"))
+          if (is.null(value)) {
+            warning(paste0("Property setter for ", propertyName, " called with null value!"))
+            return()
           }
           private$propertyCache[[propertyIndex]] <- value
           valueToSend <- value

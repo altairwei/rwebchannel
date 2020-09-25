@@ -179,7 +179,8 @@ test_that("Test bindGetterSetter", {
   "properties": [
     [0, "Title", [1, 2], "Hello World"],
     [1, "GUID", [1, 2], "7bb5a78d-2f21-44ad-ad50-2f7e52437133"],
-    [2, "Database", [1, 5], {"__QObject*__": true, "data": {}, "id": "{81b0ce6f-a09f-4dcf-bd04-70b332760b33}"}]
+    [2, "Database", [1, 5], {"__QObject*__": true, "data": {}, "id": "{81b0ce6f-a09f-4dcf-bd04-70b332760b33}"}],
+    [3, "Tag", [1, 2], null]
   ]
 }')
 
@@ -190,9 +191,12 @@ test_that("Test bindGetterSetter", {
   stub(QObject$new, 'addSignal', '', depth = 2)
 
 
-  qobj <- QObject$new("WizDocument", obj_data, webChannel)
+  expect_warning(
+    qobj <- QObject$new("WizDocument", obj_data, webChannel),
+    "Undefined initial value for property")
   expect_equal(qobj$Title, "Hello World")
   expect_equal(qobj$GUID, "7bb5a78d-2f21-44ad-ad50-2f7e52437133")
+  expect_true(is.na(qobj$Tag))
 
   qobj$Title <- "Haha"
   expect_equal(qobj$Title, "Haha")
@@ -224,6 +228,7 @@ test_that("Test bindGetterSetter", {
     value = list(id = "ObjToSend")
   ))
 
-  #TODO: expect warings
-  expect_warning(qobj$Title <- NA, "called with undefined value!")
+  # expect warings
+  expect_warning(qobj$Title <- NULL, "called with null value!")
+  expect_equal(qobj$Title, "Haha")
 })
