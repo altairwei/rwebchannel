@@ -95,7 +95,7 @@ test_that("Test addMethod", {
     ["copyLink", 21],
     ["copyLink(QString)", 21]
   ]
-}')
+}', simplify = FALSE)
 
   webChannel <- FakeQWebChannel$new()
   webChannel$exec <- mockery::mock()
@@ -182,7 +182,7 @@ test_that("Test bindGetterSetter", {
     [2, "Database", [1, 5], {"__QObject*__": true, "data": {}, "id": "{81b0ce6f-a09f-4dcf-bd04-70b332760b33}"}],
     [3, "Tag", [1, 2], null]
   ]
-}')
+}', simplify = FALSE)
 
   webChannel <- FakeQWebChannel$new()
   webChannel$exec <- mockery::mock()
@@ -231,4 +231,127 @@ test_that("Test bindGetterSetter", {
   # expect warings
   expect_warning(qobj$Title <- NULL, "called with null value!")
   expect_equal(qobj$Title, "Haha")
+})
+
+
+test_that("Test addSignal", {
+  obj_data = rjson::fromJSON('
+{
+  "properties": [
+    [0, "Title", [1, 4], "Hello World"],
+    [1, "GUID", [1, 5], "7bb5a78d-2f21-44ad-ad50-2f7e52437133"]
+  ],
+  "signals": [
+    ["tagCreated", 0],
+    ["tagModified", 1],
+    ["styleCreated", 2],
+    ["documentCreated", 3],
+    ["destroyed", 6]
+  ]
+}', simplify = FALSE)
+
+  webChannel <- FakeQWebChannel$new()
+  webChannel$exec <- mockery::mock()
+
+  qobj <- QObject$new("Database", obj_data, webChannel)
+
+  expect_true(is.list(qobj$TitleChanged))
+  expect_true(is.list(qobj$GUIDChanged))
+  expect_true(is.list(qobj$tagCreated))
+  expect_true(is.list(qobj$tagModified))
+  expect_true(is.list(qobj$styleCreated))
+  expect_true(is.list(qobj$documentCreated))
+
+  connect_callback <- mockery::mock()
+
+  qobj$tagCreated$connect(connect_callback)
+  expect_called(webChannel$exec, 1)
+  expect_equal(mock_args(webChannel$exec)[[1]][[1]], list(
+    type = QWebChannelMessageTypes["connectToSignal"],
+    object = "Database",
+    signal = 0
+  ))
+
+  qobj$tagModified$connect(connect_callback)
+  expect_called(webChannel$exec, 2)
+  expect_equal(mock_args(webChannel$exec)[[2]][[1]], list(
+    type = QWebChannelMessageTypes["connectToSignal"],
+    object = "Database",
+    signal = 1
+  ))
+
+  qobj$styleCreated$connect(connect_callback)
+  expect_called(webChannel$exec, 3)
+  expect_equal(mock_args(webChannel$exec)[[3]][[1]], list(
+    type = QWebChannelMessageTypes["connectToSignal"],
+    object = "Database",
+    signal = 2
+  ))
+
+  qobj$documentCreated$connect(connect_callback)
+  expect_called(webChannel$exec, 4)
+  expect_equal(mock_args(webChannel$exec)[[4]][[1]], list(
+    type = QWebChannelMessageTypes["connectToSignal"],
+    object = "Database",
+    signal = 3
+  ))
+
+  qobj$TitleChanged$connect(connect_callback)
+  expect_called(webChannel$exec, 4)
+  qobj$GUIDChanged$connect(connect_callback)
+  expect_called(webChannel$exec, 4)
+  qobj$destroyed$connect(connect_callback)
+  expect_called(webChannel$exec, 4)
+
+  expect_error(
+    qobj$documentCreated$connect(list()),
+    "Bad callback given to connect to signal"
+  )
+
+  disconnect_callback <- mockery::mock()
+  disconnect_callback2 <- mockery::mock()
+
+  qobj$tagCreated$disconnect(connect_callback)
+  expect_called(webChannel$exec, 5)
+  expect_equal(mock_args(webChannel$exec)[[5]][[1]], list(
+    type = QWebChannelMessageTypes["disconnectFromSignal"],
+    object = "Database",
+    signal = 0
+  ))
+
+  qobj$tagCreated$connect(disconnect_callback)
+  expect_called(webChannel$exec, 6)
+  qobj$tagCreated$disconnect(disconnect_callback)
+  expect_called(webChannel$exec, 7)
+  expect_equal(mock_args(webChannel$exec)[[7]][[1]], list(
+    type = QWebChannelMessageTypes["disconnectFromSignal"],
+    object = "Database",
+    signal = 0
+  ))
+
+  qobj$tagCreated$connect(disconnect_callback)
+  qobj$tagCreated$connect(disconnect_callback2)
+  expect_called(webChannel$exec, 9)
+  qobj$tagCreated$disconnect(disconnect_callback)
+  expect_called(webChannel$exec, 9)
+  qobj$tagCreated$disconnect(disconnect_callback2)
+  expect_called(webChannel$exec, 10)
+  expect_equal(mock_args(webChannel$exec)[[10]][[1]], list(
+    type = QWebChannelMessageTypes["disconnectFromSignal"],
+    object = "Database",
+    signal = 0
+  ))
+
+  qobj$TitleChanged$disconnect(connect_callback)
+  expect_called(webChannel$exec, 10)
+
+  expect_error(
+    qobj$documentCreated$disconnect(list()),
+    "Bad callback given to disconnect to signal"
+  )
+
+  expect_error(
+    qobj$documentCreated$disconnect(disconnect_callback),
+    "Cannot find connection of signal"
+  )
 })

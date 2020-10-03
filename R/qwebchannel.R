@@ -43,7 +43,7 @@ QWebChannel <- R6::R6Class("QWebChannel", list(
     self$transport$onMessage(function(msg) {
       data = msg$data
       if (typeof(data) == "character") {
-        data = rjson::fromJSON(data)
+        data = rjson::fromJSON(data, simplify = FALSE)
       }
       browser()
       # Dispath to different message handler

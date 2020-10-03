@@ -12,7 +12,54 @@ QObject <- R6::R6Class("QObject", lock_objects = FALSE,
     propertyCache = list(),
 
     addSignal = function(signalData, isPropertyNotifySignal) {
+      signalName <- signalData[[1L]]
+      signalIndex <- signalData[[2L]] + 1L
 
+      self[[signalName]] <- list(
+        connect = function(callback) {
+          if (!is.function(callback)) {
+            stop(paste0("Bad callback given to connect to signal ", signalName))
+          }
+
+          if (signalIndex > length(private$objectSignals)) {
+            private$objectSignals[[signalIndex]] <- list()
+          }
+          private$objectSignals[[signalIndex]] <- append(private$objectSignals[[signalIndex]], callback)
+
+          if (!isPropertyNotifySignal && signalName != "destroyed") {
+            # only required for "pure" signals, handled separately for properties in propertyUpdate
+            # also note that we always get notified about the destroyed signal
+            private$webChannel$exec(list(
+              type = QWebChannelMessageTypes["connectToSignal"],
+              object = self$id,
+              signal = signalIndex - 1L
+            ))
+          }
+        },
+        disconnect = function(callback) {
+          if (!is.function(callback)) {
+            stop(paste0("Bad callback given to disconnect to signal ", signalName))
+          }
+
+          if (signalIndex > length(private$objectSignals)) {
+            private$objectSignals[[signalIndex]] <- list()
+          }
+
+          idx <- index_of(private$objectSignals[[signalIndex]], callback)
+          if (idx == -1) {
+            stop(paste0("Cannot find connection of signal ", signalName))
+          }
+          private$objectSignals[[signalIndex]][[idx]] <- NULL
+          if (!isPropertyNotifySignal && length(private$objectSignals[[signalIndex]]) == 0) {
+            # only required for "pure" signals, handled separately for properties in propertyUpdate
+            private$webChannel$exec(list(
+              type = QWebChannelMessageTypes["disconnectFromSignal"],
+              object = self$id,
+              signal = signalIndex - 1L
+            ))
+          }
+        }
+      )
     },
 
     invokeSignalCallbacks = function(signalName, signalArgs) {
