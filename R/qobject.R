@@ -7,6 +7,7 @@ QObject <- R6::R6Class("QObject", lock_objects = FALSE,
 
     #' @field objectSignals List of callbacks that get invoked upon signal emission
     objectSignals = list(),
+    objectSignalData = list(),
 
     #' @field propertyCache Cache of all properties, updated when a notify signal is emitted
     propertyCache = list(),
@@ -14,6 +15,8 @@ QObject <- R6::R6Class("QObject", lock_objects = FALSE,
     addSignal = function(signalData, isPropertyNotifySignal) {
       signalName <- signalData[[1L]]
       signalIndex <- signalData[[2L]] + 1L
+
+      private$objectSignalData[[signalIndex]] <- signalData
 
       self[[signalName]] <- list(
         connect = function(callback) {
@@ -62,8 +65,18 @@ QObject <- R6::R6Class("QObject", lock_objects = FALSE,
       )
     },
 
+    # Invokes all callbacks for the given signalname. Also works for property notify callbacks.
     invokeSignalCallbacks = function(signalName, signalArgs) {
-
+      if (!is.list(signalArgs)) {
+        stop(paste0("Arguments are not wrapped as a list for signal ", private$objectSignalData[[signalName]][[1L]]))
+      }
+      # signalName means signalIndex
+      connections <-  private$objectSignals[[signalName]]
+      if (length(connections) != 0) {
+        for (callback in connections) {
+          do.call(callback, signalArgs)
+        }
+      }
     },
 
     addMethod = function(methodData) {

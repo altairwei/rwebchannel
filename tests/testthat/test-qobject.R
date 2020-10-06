@@ -355,3 +355,66 @@ test_that("Test addSignal", {
     "Cannot find connection of signal"
   )
 })
+
+
+test_that("Test invokeSignalCallbacks", {
+  obj_data = rjson::fromJSON('
+{
+  "properties": [
+    [0, "Title", [1, 5], "Hello World"],
+    [1, "GUID", [1, 6], "7bb5a78d-2f21-44ad-ad50-2f7e52437133"]
+  ],
+  "signals": [
+    ["destroyed", 0],
+    ["tagCreated", 1],
+    ["tagModified", 2],
+    ["styleCreated", 3],
+    ["documentCreated", 4]
+
+  ]
+}', simplify = FALSE)
+
+  webChannel <- FakeQWebChannel$new()
+  webChannel$exec <- mockery::mock()
+
+  qobj <- QObject$new("Database", obj_data, webChannel)
+
+  obj_private <- environment(qobj$unwrapQObject)$private
+
+  expect_error(
+    obj_private$invokeSignalCallbacks(1 + 1, c("A", "B", "C")),
+    "Arguments are not wrapped as a list for signal tagCreated"
+  )
+
+  func1 <- mockery::mock()
+  func2 <- mockery::mock()
+  func3 <- mockery::mock()
+  qobj$tagCreated$connect(func1)
+  qobj$tagCreated$connect(func2)
+  qobj$tagCreated$connect(func3)
+
+  obj_private$invokeSignalCallbacks(1 + 1, list(tag_data = list("A", "B", "C")))
+  expect_args(func1, 1, tag_data = list("A", "B", "C"))
+  expect_args(func2, 1, tag_data = list("A", "B", "C"))
+  expect_args(func3, 1, tag_data = list("A", "B", "C"))
+
+  obj_private$invokeSignalCallbacks(1 + 1, list(tag_data = list("Hello World")))
+  expect_args(func1, 2, tag_data = list("Hello World"))
+  expect_args(func2, 2, tag_data = list("Hello World"))
+  expect_args(func3, 2, tag_data = list("Hello World"))
+
+  qobj$tagCreated$disconnect(func2)
+  qobj$tagCreated$disconnect(func3)
+  obj_private$invokeSignalCallbacks(1 + 1, list(tag_data = list("Hello World")))
+  expect_called(func1, 3)
+  expect_called(func2, 2)
+  expect_called(func3, 2)
+
+  qobj$tagCreated$disconnect(func1)
+  obj_private$invokeSignalCallbacks(1 + 1, list(tag_data = list("Hello World")))
+  expect_called(func1, 3)
+
+  qobj$tagCreated$connect(func1)
+  obj_private$invokeSignalCallbacks(1 + 1, list(list("Hello World")))
+  expect_args(func1, 4, list("Hello World"))
+})
