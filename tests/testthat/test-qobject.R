@@ -418,3 +418,32 @@ test_that("Test invokeSignalCallbacks", {
   obj_private$invokeSignalCallbacks(1 + 1, list(list("Hello World")))
   expect_args(func1, 4, list("Hello World"))
 })
+
+
+test_that("Test propertyUpdate", {
+  obj_data = rjson::fromJSON('
+{
+  "properties": [
+    [0, "Title", [1, 5], "Hello World"],
+    [1, "GUID", [1, 6], "7bb5a78d-2f21-44ad-ad50-2f7e52437133"]
+  ],
+  "signals": [
+    ["destroyed", 0],
+    ["tagCreated", 1],
+    ["tagModified", 2],
+    ["styleCreated", 3],
+    ["documentCreated", 4]
+
+  ]
+}', simplify = FALSE)
+
+  resp_data = rjson::fromJSON('
+{
+  "object": "Database",
+  "signals": {
+    "5":
+    "6":
+  },
+  "properties":
+}', simplify = FALSE)
+})

@@ -217,7 +217,20 @@ QObject <- R6::R6Class("QObject", lock_objects = FALSE,
     },
 
     propertyUpdate = function(signals, propertyMap) {
+      # TODO: 查看 C++ 源代码，确定 signals 和 propertyMap 的结构
+      stopifnot(is.list(propertyMap))
 
+      # update property cache
+      for (propertyIndex in names(propertyMap)) {
+        propertyValue <- propertyMap[[propertyIndex]]
+        private$propertyCache[[propertyIndex]] <- propertyValue
+      }
+
+      for (signalName in seq_along(signals)) {
+        # Invoke all callbacks, as signalEmitted() does not. This ensures the
+        # property cache is updated before the callbacks are invoked.
+        invokeSignalCallbacks(signalName, signals[[signalName]])
+      }
     },
 
     signalEmitted = function(signalName, signalArgs) {

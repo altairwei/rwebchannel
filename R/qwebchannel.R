@@ -45,22 +45,20 @@ QWebChannel <- R6::R6Class("QWebChannel", list(
       if (typeof(data) == "character") {
         data = rjson::fromJSON(data, simplify = FALSE)
       }
-      browser()
       # Dispath to different message handler
       if (data$type == QWebChannelMessageTypes['signal'])
         {
-          message("'signal' message received: ", data)
+          # message("'signal' message received: ", data)
         }
       else
       if (data$type == QWebChannelMessageTypes['response'])
         {
-          message(data)
           self$handleResponse(data)
         }
       else
       if (data$type == QWebChannelMessageTypes['propertyUpdate'])
         {
-          message("'propertyUpdate' message received: ", data)
+          cat(rjson::toJSON(data), file = ".tmp/propertyUpdate.json")
         }
       else
         {
