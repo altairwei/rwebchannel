@@ -22,7 +22,7 @@ DEFINES += "BUILD_DIR=\"\\\""$$OUT_PWD"\\\"\""
 exampleassets.files += \
     index.html
 exampleassets.path = $$[QT_INSTALL_EXAMPLES]/webchannel/standalone
-include(../exampleassets.pri)
+include(exampleassets.pri)
 
 target.path = $$[QT_INSTALL_EXAMPLES]/webchannel/standalone
 INSTALLS += target

@@ -50,8 +50,8 @@
 
 #include "dialog.h"
 #include "core.h"
-#include "../shared/websocketclientwrapper.h"
-#include "../shared/websockettransport.h"
+#include "websocketclientwrapper.h"
+#include "websockettransport.h"
 
 #include <QApplication>
 #include <QDesktopServices>
@@ -94,7 +94,7 @@ int main(int argc, char** argv)
     channel.registerObject(QStringLiteral("core"), &core);
 
     // open a browser window with the client HTML page
-    QUrl url = QUrl::fromLocalFile(BUILD_DIR "/index.html");
+    QUrl url = QUrl::fromLocalFile("index.html");
     QDesktopServices::openUrl(url);
 
     dialog.displayMessage(Dialog::tr("Initialization complete, opening browser at %1.").arg(url.toDisplayString()));
