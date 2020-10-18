@@ -61,6 +61,9 @@
 #include <QUrl>
 #include <QWebChannel>
 #include <QWebSocketServer>
+#include <QProcess>
+#include <QStringList>
+#include <QDir>
 
 int main(int argc, char** argv)
 {
@@ -94,10 +97,15 @@ int main(int argc, char** argv)
     channel.registerObject(QStringLiteral("core"), &core);
 
     // open a browser window with the client HTML page
-    QUrl url = QUrl::fromLocalFile("index.html");
-    QDesktopServices::openUrl(url);
+    //QUrl url = QUrl::fromLocalFile("index.html");
+    //QDesktopServices::openUrl(url);
 
-    dialog.displayMessage(Dialog::tr("Initialization complete, opening browser at %1.").arg(url.toDisplayString()));
+    QString index_R_filename = QDir::current().absoluteFilePath("index.R");
+
+    dialog.displayMessage(QString(
+        "Initialization complete.\n"
+        "Try to open an R terminal and type: source('%1')"
+    ).arg(index_R_filename));
     dialog.show();
 
     return app.exec();

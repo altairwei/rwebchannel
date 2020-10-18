@@ -25,7 +25,7 @@ set(HEADERS
 
 set(FORMS dialog.ui)
 
-set(ASSETS index.html qwebchannel.js)
+set(ASSETS index.R)
 
 qt5_wrap_ui(${FORMS})
 
