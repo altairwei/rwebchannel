@@ -437,13 +437,40 @@ test_that("Test propertyUpdate", {
   ]
 }', simplify = FALSE)
 
+  # Notify signal for `Title` property is automatically generated
+  #   and it's notify signal index is 5
   resp_data = rjson::fromJSON('
 {
-  "object": "Database",
-  "signals": {
-    "5":
-    "6":
-  },
-  "properties":
+    "object": "Database",
+    "properties": {
+        "0": "New Title",
+        "1": "bd5c726c-120a-4d61-a4e9-d82fd07821a3"
+    },
+    "signals": {
+        "5": ["New Title"],
+        "6": ["bd5c726c-120a-4d61-a4e9-d82fd07821a3"]
+    }
 }', simplify = FALSE)
+
+  webChannel <- FakeQWebChannel$new()
+  webChannel$exec <- mockery::mock()
+
+  qobj <- QObject$new("Database", obj_data, webChannel)
+
+  func1 <- mockery::mock()
+  func2 <- mockery::mock()
+  qobj$TitleChanged$connect(func1)
+  qobj$GUIDChanged$connect(func2)
+
+  qobj$propertyUpdate(resp_data[["signals"]], resp_data[["properties"]])
+
+  # Check updated property
+  expect_equal(qobj$Title, "New Title")
+  expect_equal(qobj$GUID, "bd5c726c-120a-4d61-a4e9-d82fd07821a3")
+
+  # Check signal callback
+  expect_called(func1, 1)
+  expect_equal(mock_args(func1)[[1]][[1]], "New Title")
+  expect_called(func2, 1)
+  expect_equal(mock_args(func2)[[1]][[1]], "bd5c726c-120a-4d61-a4e9-d82fd07821a3")
 })

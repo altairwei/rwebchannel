@@ -18,5 +18,5 @@ test_that("Try to build connection", {
     })
   })
 
-  socket$connect()
+  #socket$connect()
 })

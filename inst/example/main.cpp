@@ -97,8 +97,8 @@ int main(int argc, char** argv)
     channel.registerObject(QStringLiteral("core"), &core);
 
     // open a browser window with the client HTML page
-    //QUrl url = QUrl::fromLocalFile("index.html");
-    //QDesktopServices::openUrl(url);
+    QUrl url = QUrl::fromLocalFile("index.html");
+    QDesktopServices::openUrl(url);
 
     QString index_R_filename = QDir::current().absoluteFilePath("index.R");
 

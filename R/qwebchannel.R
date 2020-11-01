@@ -35,7 +35,7 @@ QWebChannel <- R6::R6Class("QWebChannel", list(
   #' @param initCallback Function to excute after building connection
   initialize = function(transport, initCallback = NULL) {
     # Make sure transport is a R6 object, and have a send method
-    stopifnot("R6" %in% class(transport), typeof(transport$send) == "closure")
+    stopifnot("R6" %in% class(transport), is.function(transport$send))
 
     self$transport <- transport
 
@@ -48,7 +48,7 @@ QWebChannel <- R6::R6Class("QWebChannel", list(
       # Dispath to different message handler
       if (data$type == QWebChannelMessageTypes['signal'])
         {
-          # message("'signal' message received: ", data)
+          message("'signal' message received: ", data)
         }
       else
       if (data$type == QWebChannelMessageTypes['response'])
@@ -58,7 +58,7 @@ QWebChannel <- R6::R6Class("QWebChannel", list(
       else
       if (data$type == QWebChannelMessageTypes['propertyUpdate'])
         {
-          cat(rjson::toJSON(data), file = ".tmp/propertyUpdate.json")
+          message("'propertyUpdate' message received: ", data)
         }
       else
         {

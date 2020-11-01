@@ -67,6 +67,7 @@ QObject <- R6::R6Class("QObject", lock_objects = FALSE,
 
     # Invokes all callbacks for the given signalname. Also works for property notify callbacks.
     invokeSignalCallbacks = function(signalName, signalArgs) {
+      stopifnot(is.numeric(signalName))
       if (!is.list(signalArgs)) {
         stop(paste0("Arguments are not wrapped as a list for signal ", private$objectSignalData[[signalName]][[1L]]))
       }
@@ -217,19 +218,22 @@ QObject <- R6::R6Class("QObject", lock_objects = FALSE,
     },
 
     propertyUpdate = function(signals, propertyMap) {
-      # TODO: 查看 C++ 源代码，确定 signals 和 propertyMap 的结构
       stopifnot(is.list(propertyMap))
 
       # update property cache
       for (propertyIndex in names(propertyMap)) {
+        # The propertyIndex is in the form of strings as a key
         propertyValue <- propertyMap[[propertyIndex]]
-        private$propertyCache[[propertyIndex]] <- propertyValue
+        # Convert propertyIndex to 1-based indexing
+        private$propertyCache[[strtoi(propertyIndex) + 1L]] <- propertyValue
       }
 
-      for (signalName in seq_along(signals)) {
+      for (signalName in names(signals)) {
         # Invoke all callbacks, as signalEmitted() does not. This ensures the
         # property cache is updated before the callbacks are invoked.
-        invokeSignalCallbacks(signalName, signals[[signalName]])
+
+        # Convert signalName to 1-based indexing
+        private$invokeSignalCallbacks(strtoi(signalName) + 1L, signals[[signalName]])
       }
     },
 
