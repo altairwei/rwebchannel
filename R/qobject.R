@@ -193,15 +193,24 @@ QObject <- R6::R6Class("QObject", lock_objects = FALSE,
       }
     },
 
-    unwrapQObject = function(response = NULL) {
-      # support list of objects
+    unwrapQObject = function(response) {
+      # support list of objects, unnamed list can be uesed as array
+      if (is.list(response) && is.null(names(response))) {
+        ret = list()
+        for (r in response) {
+          if (!is.list(r))
+              return(response)
+          ret[[length(ret) + 1]] <- self$unwrapQObject(r)
+        }
+        return(ret)
+      }
 
       if (is.null(response) || is.null(response[["__QObject*__"]])
             || is.null(response[["id"]])) {
         return(response)
       }
 
-      objectId = response[["id"]];
+      objectId = response[["id"]]
       if (!is.null(private$webChannel$objects[[objectId]]))
           return(private$webChannel$objects[[objectId]])
 
@@ -210,7 +219,20 @@ QObject <- R6::R6Class("QObject", lock_objects = FALSE,
           return()
       }
 
-
+      qObject = QObject$new(objectId, response$data, private$webChannel)
+      qObject$destroyed$connect(function() {
+        if (identical(private$webChannel$objects[[objectId]], qObject)) {
+          private$webChannel$objects[[objectId]] <- NULL
+          # reset the now deleted QObject to an empty object
+          enclos_env <- environment(qObject$unwrapProperties)
+          rm(list = ls(envir = enclos_env$private), envir = enclos_env$private)
+          rm(list = ls(envir = enclos_env$self), envir = enclos_env$self)
+          rm(list = ls(envir = enclos_env), envir = enclos_env)
+        }
+      })
+      # here we are already initialized, and thus must directly unwrap the properties
+      qObject$unwrapProperties()
+      return(qObject)
     },
 
     unwrapProperties = function() {

@@ -474,3 +474,118 @@ test_that("Test propertyUpdate", {
   expect_called(func2, 1)
   expect_equal(mock_args(func2)[[1]][[1]], "bd5c726c-120a-4d61-a4e9-d82fd07821a3")
 })
+
+
+test_that("Test unwrapQObject", {
+  obj_data = rjson::fromJSON('
+{
+  "properties": [
+    [0, "Title", [1, 5], "Hello World"],
+    [1, "GUID", [1, 6], "7bb5a78d-2f21-44ad-ad50-2f7e52437133"]
+  ],
+  "signals": [
+    ["destroyed", 0],
+    ["tagCreated", 1],
+    ["tagModified", 2],
+    ["styleCreated", 3],
+    ["documentCreated", 4]
+
+  ]
+}', simplify = FALSE)
+
+  # These objects are usually unnamed and unregistered.
+  tmp_data = rjson::fromJSON(
+'{
+  "__QObject*__": true,
+  "data":{
+    "methods":[
+      ["deleteLater", 3],
+      ["deleteLater()", 3],
+      ["CurrentDocument", 5],
+      ["CurrentDocument()", 5]
+    ],
+    "properties":[
+      [0, "objectName", [1, 2], ""],
+      [1, "Location", [1, 3], "US"]
+    ],
+    "signals":[
+      ["destroyed", 0],
+      ["destroyed(QObject*)", 0],
+      ["destroyed()", 1]
+    ]
+  },
+  "id":"{b85f0bb9-0a9e-44bd-9d16-9fcfa84d6fa6}"
+}', simplify = FALSE)
+
+  webChannel <- FakeQWebChannel$new()
+  webChannel$exec <- mockery::mock()
+
+  qobj <- QObject$new("Database", obj_data, webChannel)
+
+  stub(qobj$unwrapQObject, 'unwrapProperties', '')
+
+  # Single QObject
+  new_obj <- qobj$unwrapQObject(tmp_data)
+  expect_equal(new_obj$Location, "US")
+  expect_true(is.function(new_obj$CurrentDocument))
+  # Object already unwrapped
+  expect_equal(
+    qobj$unwrapQObject(
+      list(
+        id = "{b85f0bb9-0a9e-44bd-9d16-9fcfa84d6fa6}",
+        `__QObject*__` = TRUE
+      )
+    ),
+    new_obj
+  )
+  expect_message(
+    qobj$unwrapQObject(
+      list(
+        id = "{e0a9f0ee-7930-4943-9084-81c83eda54cc}",
+        `__QObject*__` = TRUE
+      )
+    ),
+    "Cannot unwrap unknown QObject"
+  )
+
+  # Test destroyed signal callback
+  obj_private <- environment(new_obj$unwrapQObject)$private
+  expect_equal(length(obj_private$objectSignals[[1]]), 1)
+  tmp_data4 <- tmp_data
+  tmp_data4[["id"]] <- "{bc30d9ee-213c-40e1-8a12-6ae7408c682e}"
+  new_obj2 <- qobj$unwrapQObject(tmp_data4)
+  obj_private <- environment(new_obj2$unwrapQObject)$private
+  expect_equal(length(obj_private$objectSignals[[1]]), 1)
+  obj_private$objectSignals[[1]][[1]]()
+  expect_null(new_obj2$id)
+  expect_null(new_obj2$objectName)
+  expect_null(new_obj2$Location)
+  expect_null(new_obj2$destroyed)
+  expect_null(new_obj2$deleteLater)
+  expect_null(new_obj2$CurrentDocument)
+  expect_null(obj_private$webChannel)
+  expect_null(obj_private$objectSignals)
+  expect_null(obj_private$objectSignalData)
+  expect_null(obj_private$propertyCache)
+
+  # list of QObject
+  tmp_data2 <- tmp_data
+  tmp_data2[["id"]] <- "{b1fe966e-89b2-4727-b032-b33fae0453e6}"
+  tmp_data3 <- tmp_data
+  tmp_data3[["id"]] <- "{1fa16570-2c41-459a-88cd-1380f91bc196}"
+  obj_data_list <- list(tmp_data, tmp_data2, tmp_data3)
+  obj_list <- qobj$unwrapQObject(obj_data_list)
+  expect_equal(length(obj_list), 3)
+  expect_equal(obj_list[[1]]$id, "{b85f0bb9-0a9e-44bd-9d16-9fcfa84d6fa6}")
+  expect_equal(obj_list[[2]]$id, "{b1fe966e-89b2-4727-b032-b33fae0453e6}")
+  expect_equal(obj_list[[3]]$id, "{1fa16570-2c41-459a-88cd-1380f91bc196}")
+
+  # Unknown data
+  wrong_data1 = list(1, 2, 3, 4)
+  expect_null(qobj$unwrapQObject(NULL))
+  expect_equal(qobj$unwrapQObject(wrong_data1), wrong_data1)
+  wrong_data2 = list(A = 1, B = 2, C = 3, D = 4)
+  expect_equal(qobj$unwrapQObject(wrong_data2), wrong_data2)
+  wrong_data3 = list(id = "{6b6dff54-4de8-4183-b1cf-37f8e1209790}")
+  expect_equal(qobj$unwrapQObject(wrong_data3), wrong_data3)
+})
