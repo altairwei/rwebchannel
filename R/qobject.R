@@ -205,7 +205,8 @@ QObject <- R6::R6Class("QObject", lock_objects = FALSE,
         return(ret)
       }
 
-      if (is.null(response) || is.null(response[["__QObject*__"]])
+      if (is.null(response) || !is.list(response)
+            || is.null(response[["__QObject*__"]])
             || is.null(response[["id"]])) {
         return(response)
       }
@@ -222,6 +223,8 @@ QObject <- R6::R6Class("QObject", lock_objects = FALSE,
       qObject = QObject$new(objectId, response$data, private$webChannel)
       qObject$destroyed$connect(function() {
         if (identical(private$webChannel$objects[[objectId]], qObject)) {
+          #browser()
+          # 为什么下面这条语句会出错？
           private$webChannel$objects[[objectId]] <- NULL
           # reset the now deleted QObject to an empty object
           enclos_env <- environment(qObject$unwrapProperties)
@@ -236,7 +239,10 @@ QObject <- R6::R6Class("QObject", lock_objects = FALSE,
     },
 
     unwrapProperties = function() {
-
+      for (propertyIdx in seq_along(private$propertyCache)) {
+        #browser()
+        private$propertyCache[[propertyIdx]] <- self$unwrapQObject(private$propertyCache[[propertyIdx]])
+      }
     },
 
     propertyUpdate = function(signals, propertyMap) {

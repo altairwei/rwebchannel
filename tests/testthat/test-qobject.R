@@ -2,17 +2,16 @@ library(rjson)
 library(mockery)
 library(testthat)
 
-FakeQWebChannel <-
-  R6::R6Class(
-    "FakeQWebChannel",
-    lock_objects = FALSE,
-    list(
-      objects = list(),
-      execCallbacks = list(),
-      transport = NULL,
-      execId = 1L
-    )
+FakeQWebChannel <- R6::R6Class(
+  "FakeQWebChannel",
+  lock_objects = FALSE,
+  list(
+    objects = list(),
+    execCallbacks = list(),
+    transport = NULL,
+    execId = 1L
   )
+)
 
 object_data = '
 {
@@ -522,7 +521,19 @@ test_that("Test unwrapQObject", {
 
   qobj <- QObject$new("Database", obj_data, webChannel)
 
-  stub(qobj$unwrapQObject, 'unwrapProperties', '')
+  # Unknown data
+  wrong_data1 = list(1, 2, 3, 4)
+  expect_null(qobj$unwrapQObject(NULL))
+  expect_equal(qobj$unwrapQObject(wrong_data1), wrong_data1)
+  wrong_data2 = list(A = 1, B = 2, C = 3, D = 4)
+  expect_equal(qobj$unwrapQObject(wrong_data2), wrong_data2)
+  wrong_data3 = list(id = "{6b6dff54-4de8-4183-b1cf-37f8e1209790}")
+  expect_equal(qobj$unwrapQObject(wrong_data3), wrong_data3)
+
+  # Simple wrong data
+  expect_equal(qobj$unwrapQObject("Hello World"), "Hello World")
+  expect_equal(qobj$unwrapQObject(124), 124)
+  expect_equal(qobj$unwrapQObject(TRUE), TRUE)
 
   # Single QObject
   new_obj <- qobj$unwrapQObject(tmp_data)
@@ -579,13 +590,53 @@ test_that("Test unwrapQObject", {
   expect_equal(obj_list[[1]]$id, "{b85f0bb9-0a9e-44bd-9d16-9fcfa84d6fa6}")
   expect_equal(obj_list[[2]]$id, "{b1fe966e-89b2-4727-b032-b33fae0453e6}")
   expect_equal(obj_list[[3]]$id, "{1fa16570-2c41-459a-88cd-1380f91bc196}")
+})
 
-  # Unknown data
-  wrong_data1 = list(1, 2, 3, 4)
-  expect_null(qobj$unwrapQObject(NULL))
-  expect_equal(qobj$unwrapQObject(wrong_data1), wrong_data1)
-  wrong_data2 = list(A = 1, B = 2, C = 3, D = 4)
-  expect_equal(qobj$unwrapQObject(wrong_data2), wrong_data2)
-  wrong_data3 = list(id = "{6b6dff54-4de8-4183-b1cf-37f8e1209790}")
-  expect_equal(qobj$unwrapQObject(wrong_data3), wrong_data3)
+
+test_that("Test unwrapProperties", {
+  obj_data = rjson::fromJSON('
+{
+  "properties": [
+    [0, "Title", [1, 5], "Hello World"],
+    [1, "GUID", [1, 6], "7bb5a78d-2f21-44ad-ad50-2f7e52437133"],
+    [2, "RootFolder", [1, 7],
+      {
+        "__QObject*__": true,
+        "data":{
+          "properties":[
+            [0, "objectName", [1, 3], ""],
+            [1, "Name", [1, 4], "My Notes"]
+          ],
+          "signals":[
+            ["destroyed", 0],
+            ["destroyed(QObject*)", 0],
+            ["destroyed()", 1],
+            ["htmlModified", 2]
+          ]
+        },
+        "id":"{b85f0bb9-0a9e-44bd-9d16-9fcfa84d6fa6}"
+      }
+    ]
+  ],
+  "signals": [
+    ["destroyed", 0],
+    ["tagCreated", 1],
+    ["tagModified", 2],
+    ["styleCreated", 3],
+    ["documentCreated", 4]
+  ]
+}', simplify = FALSE)
+
+  webChannel <- FakeQWebChannel$new()
+  webChannel$exec <- mockery::mock()
+
+  qobj <- QObject$new("Database", obj_data, webChannel)
+  qobj$unwrapProperties()
+
+  expect_equal(qobj$Title, "Hello World")
+  expect_equal(qobj$GUID, "7bb5a78d-2f21-44ad-ad50-2f7e52437133")
+
+  expect_equal(qobj$RootFolder$Name, "My Notes")
+  expect_true(is.function(qobj$RootFolder$htmlModified$connect))
+
 })
