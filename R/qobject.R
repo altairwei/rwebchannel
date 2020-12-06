@@ -266,7 +266,7 @@ QObject <- R6::R6Class("QObject", lock_objects = FALSE,
     },
 
     signalEmitted = function(signalName, signalArgs) {
-
+      private$invokeSignalCallbacks(strtoi(signalName) + 1L, self$unwrapQObject(signalArgs))
     }
   )
 )

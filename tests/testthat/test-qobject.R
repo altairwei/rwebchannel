@@ -640,3 +640,44 @@ test_that("Test unwrapProperties", {
   expect_true(is.function(qobj$RootFolder$htmlModified$connect))
 
 })
+
+test_that("Test signalEmitted", {
+  obj_data = rjson::fromJSON('
+{
+  "properties": [
+    [0, "Title", [1, 5], "Hello World"],
+    [1, "GUID", [1, 6], "7bb5a78d-2f21-44ad-ad50-2f7e52437133"]
+  ],
+  "signals": [
+    ["destroyed", 0],
+    ["tagCreated", 1],
+    ["tagModified", 2],
+    ["styleCreated", 3],
+    ["documentCreated", 4]
+  ]
+}', simplify = FALSE)
+
+  signal_data = rjson::fromJSON('
+{
+  "args": [
+      "hello world"
+  ],
+  "object": "Database",
+  "signal": 2,
+  "type": 1
+}', simplify = FALSE)
+
+  webChannel <- FakeQWebChannel$new()
+  webChannel$exec <- mockery::mock()
+
+  qobj <- QObject$new("Database", obj_data, webChannel)
+
+  func1 <- mockery::mock()
+  qobj$tagModified$connect(func1)
+
+  qobj$signalEmitted(signal_data$signal, signal_data$args)
+  expect_args(func1, 1, "hello world")
+
+  qobj$signalEmitted(signal_data$signal, list(A = "a"))
+  expect_args(func1, 2, list(A = "a"))
+})
