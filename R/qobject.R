@@ -75,7 +75,16 @@ QObject <- R6::R6Class("QObject", lock_objects = FALSE,
       connections <-  private$objectSignals[[signalName]]
       if (length(connections) != 0) {
         for (callback in connections) {
-          do.call(callback, signalArgs)
+          #FIXME: In JavaScript the apply() method calls a function with a given this value, 
+          # and arguments provided as an array (or an array-like object).
+          if (is.list(signalArgs) && is.null(names(signalArgs))) {
+            # Behave like an array
+            do.call(callback, signalArgs)
+          } else {
+            # Just an ordinary object
+            callback(signalArgs)
+          }
+          
         }
       }
     },

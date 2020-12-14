@@ -94,11 +94,12 @@ QWebChannel <- R6::R6Class("QWebChannel", list(
     }
 
     if (!is.null(data[['id']])) {
-      warning("Cannot exec message with property id: " + rjson::toJSON(data))
+      warning(paste0("Cannot exec message with property id: ", rjson::toJSON(data)))
       return()
     }
 
     data[['id']] = self$execId
+    self$execId <- self$execId + 1L
     self$execCallbacks[[data[['id']]]] = callback
     self$send(data)
   },

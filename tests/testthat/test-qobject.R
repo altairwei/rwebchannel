@@ -393,14 +393,14 @@ test_that("Test invokeSignalCallbacks", {
   qobj$tagCreated$connect(func3)
 
   obj_private$invokeSignalCallbacks(1 + 1, list(tag_data = list("A", "B", "C")))
-  expect_args(func1, 1, tag_data = list("A", "B", "C"))
-  expect_args(func2, 1, tag_data = list("A", "B", "C"))
-  expect_args(func3, 1, tag_data = list("A", "B", "C"))
+  expect_args(func1, 1, list(tag_data = list("A", "B", "C")))
+  expect_args(func2, 1, list(tag_data = list("A", "B", "C")))
+  expect_args(func3, 1, list(tag_data = list("A", "B", "C")))
 
   obj_private$invokeSignalCallbacks(1 + 1, list(tag_data = list("Hello World")))
-  expect_args(func1, 2, tag_data = list("Hello World"))
-  expect_args(func2, 2, tag_data = list("Hello World"))
-  expect_args(func3, 2, tag_data = list("Hello World"))
+  expect_args(func1, 2, list(tag_data = list("Hello World")))
+  expect_args(func2, 2, list(tag_data = list("Hello World")))
+  expect_args(func3, 2, list(tag_data = list("Hello World")))
 
   qobj$tagCreated$disconnect(func2)
   qobj$tagCreated$disconnect(func3)
@@ -660,7 +660,7 @@ test_that("Test signalEmitted", {
   signal_data = rjson::fromJSON('
 {
   "args": [
-      "hello world"
+    "hello world"
   ],
   "object": "Database",
   "signal": 2,
