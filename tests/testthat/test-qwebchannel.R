@@ -64,3 +64,142 @@ test_that("Test exec", {
     "Cannot exec message with property id: "
   )
 })
+
+
+obj_data = rjson::fromJSON('
+{
+  "properties": [
+    [0, "Title", [1, 5], "Hello World"],
+    [1, "GUID", [1, 6], "7bb5a78d-2f21-44ad-ad50-2f7e52437133"]
+  ],
+  "signals": [
+    ["destroyed", 0],
+    ["tagCreated", 1],
+    ["tagModified", 2],
+    ["styleCreated", 3],
+    ["documentCreated", 4]
+  ]
+}', simplify = FALSE)
+
+test_that("Test handleSignal", {
+  signal_data = rjson::fromJSON('
+{
+  "args": [
+    "hello world"
+  ],
+  "object": "Database",
+  "signal": 2,
+  "type": 1
+}', simplify = FALSE)
+
+  trans <- FakeTransport$new()
+  webChannel <- QWebChannel$new(trans)
+  qobj <- QObject$new("Database", obj_data, webChannel)
+
+  func1 <- mockery::mock()
+  qobj$tagModified$connect(func1)
+
+  webChannel$handleSignal(signal_data)
+  expect_args(func1, 1, "hello world")
+})
+
+
+test_that("Test handleResponse", {
+  resp_data = rjson::fromJSON('
+{
+  "data": "Hello World",
+  "id":  2,
+  "type":  10
+}', simplify = FALSE)
+
+  trans <- FakeTransport$new()
+  webChannel <- QWebChannel$new(trans)
+  qobj <- QObject$new("Database", obj_data, webChannel)
+
+  func1 <- mockery::mock()
+  # exec id should be 2
+  webChannel$exec(list(A = "data"), func1)
+  expect_equal(webChannel$execCallbacks[["2"]], func1)
+  expect_equal(webChannel$execId, 3L)
+
+  webChannel$handleResponse(resp_data)
+  expect_null(webChannel$execCallbacks[["2"]])
+  expect_args(func1, 1, "Hello World")
+
+  # Check order of response
+  func2 <- mockery::mock()
+  func3 <- mockery::mock()
+  webChannel$exec(list(A = "first exec"), func2)
+  expect_equal(webChannel$execCallbacks[["3"]], func2)
+  webChannel$exec(list(A = "second exec"), func3)
+  expect_equal(webChannel$execCallbacks[["4"]], func3)
+
+  webChannel$handleResponse(list(
+    data = "second exec resp",
+    id = 4,
+    type = 10
+  ))
+  expect_null(webChannel$execCallbacks[["4"]])
+  expect_args(func3, 1, "second exec resp")
+
+  webChannel$handleResponse(list(
+    data = "first exec resp",
+    id = 3,
+    type = 10
+  ))
+  expect_null(webChannel$execCallbacks[["3"]])
+  expect_args(func2, 1, "first exec resp")
+})
+
+
+test_that("Test handlePropertyUpdate", {
+  prop_data = rjson::fromJSON('
+{
+  "data": [
+    {
+      "object": "Database",
+      "properties": {
+        "0": "New Title",
+        "1": "bd5c726c-120a-4d61-a4e9-d82fd07821a3"
+      },
+      "signals": {
+        "5": ["New Title"],
+        "6": ["bd5c726c-120a-4d61-a4e9-d82fd07821a3"]
+      }
+    }
+  ],
+  "type": 2
+}', simplify = FALSE)
+
+  trans <- FakeTransport$new()
+  webChannel <- QWebChannel$new(trans)
+  qobj <- QObject$new("Database", obj_data, webChannel)
+
+  func1 <- mockery::mock()
+  func2 <- mockery::mock()
+  qobj$TitleChanged$connect(func1)
+  qobj$GUIDChanged$connect(func2)
+
+  webChannel$handlePropertyUpdate(prop_data)
+
+  # Check updated property
+  expect_equal(qobj$Title, "New Title")
+  expect_equal(qobj$GUID, "bd5c726c-120a-4d61-a4e9-d82fd07821a3")
+
+  # Check signal callback
+  expect_called(func1, 1)
+  expect_equal(mock_args(func1)[[1]][[1]], "New Title")
+  expect_called(func2, 1)
+  expect_equal(mock_args(func2)[[1]][[1]], "bd5c726c-120a-4d61-a4e9-d82fd07821a3")
+
+  # Wrong case
+  expect_warning(
+    webChannel$handlePropertyUpdate(list(
+      data = list(
+        list(object = "WrongObj")
+      ),
+      type = 2
+    )),
+    "Unhandled property update: WrongObj"
+  )
+})

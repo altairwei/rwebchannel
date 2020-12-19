@@ -440,15 +440,15 @@ test_that("Test propertyUpdate", {
   #   and it's notify signal index is 5
   resp_data = rjson::fromJSON('
 {
-    "object": "Database",
-    "properties": {
-        "0": "New Title",
-        "1": "bd5c726c-120a-4d61-a4e9-d82fd07821a3"
-    },
-    "signals": {
-        "5": ["New Title"],
-        "6": ["bd5c726c-120a-4d61-a4e9-d82fd07821a3"]
-    }
+  "object": "Database",
+  "properties": {
+    "0": "New Title",
+    "1": "bd5c726c-120a-4d61-a4e9-d82fd07821a3"
+  },
+  "signals": {
+    "5": ["New Title"],
+    "6": ["bd5c726c-120a-4d61-a4e9-d82fd07821a3"]
+  }
 }', simplify = FALSE)
 
   webChannel <- FakeQWebChannel$new()

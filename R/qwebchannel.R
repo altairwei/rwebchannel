@@ -48,7 +48,7 @@ QWebChannel <- R6::R6Class("QWebChannel", list(
       # Dispath to different message handler
       if (data$type == QWebChannelMessageTypes['signal'])
         {
-          message("'signal' message received: ", data)
+          self$handleSignal(data)
         }
       else
       if (data$type == QWebChannelMessageTypes['response'])
@@ -58,7 +58,7 @@ QWebChannel <- R6::R6Class("QWebChannel", list(
       else
       if (data$type == QWebChannelMessageTypes['propertyUpdate'])
         {
-          message("'propertyUpdate' message received: ", data)
+          self$handlePropertyUpdate(data)
         }
       else
         {
@@ -100,7 +100,7 @@ QWebChannel <- R6::R6Class("QWebChannel", list(
 
     data[['id']] = self$execId
     self$execId <- self$execId + 1L
-    self$execCallbacks[[data[['id']]]] = callback
+    self$execCallbacks[[ as.character(data$id) ]] = callback
     self$send(data)
   },
 
@@ -119,9 +119,18 @@ QWebChannel <- R6::R6Class("QWebChannel", list(
   #' @param message Data to send.
   debug = function(message) {
     self$send(list(
-      type = QWebChannelMessageTypes['debug'],
+      type = QWebChannelMessageTypes[["debug"]],
       data = message
     ));
+  },
+
+  handleSignal = function(message) {
+    object <- self$objects[[message$object]]
+    if (!is.null(object)) {
+      object$signalEmitted(message$signal, message$args)
+    } else {
+      warning(paste0("Unhandled signal: ", message$object, "::", message$signal))
+    }
   },
 
   #' Handle response type message
@@ -133,7 +142,19 @@ QWebChannel <- R6::R6Class("QWebChannel", list(
       return()
     }
 
-    self$execCallbacks[[ message[['id']] ]](message[['data']])
-    self$execCallbacks[[ message[['id']] ]] <- NULL
+    self$execCallbacks[[ as.character(message$id) ]](message[['data']])
+    self$execCallbacks[[ as.character(message$id) ]] <- NULL
+  },
+
+  handlePropertyUpdate = function(message) {
+    for (data in message$data) {
+      object <- self$objects[[data$object]]
+      if (!is.null(object)) {
+        object$propertyUpdate(data$signals, data$properties)
+      } else {
+        warning(paste0("Unhandled property update: ", data$object))
+      }
+    }
+    self$exec(list(type = QWebChannelMessageTypes[["idle"]]))
   }
 ))
