@@ -41,33 +41,49 @@ QWebChannel <- R6::R6Class("QWebChannel", list(
 
     # Define message handler
     self$transport$onMessage(function(msg) {
-      data = msg$data
-      if (typeof(data) == "character") {
-        data = rjson::fromJSON(data, simplify = FALSE)
-      }
-      # Dispath to different message handler
-      if (data$type == QWebChannelMessageTypes['signal'])
+      tryCatch(
         {
-          self$handleSignal(data)
+          data = msg$data
+          if (is.character(data)) {
+            data = rjson::fromJSON(data, simplify = FALSE)
+          }
+          # Dispath to different message handler
+          if (data$type == QWebChannelMessageTypes['signal'])
+            {
+              self$handleSignal(data)
+            }
+          else
+          if (data$type == QWebChannelMessageTypes['response'])
+            {
+              self$handleResponse(data)
+            }
+          else
+          if (data$type == QWebChannelMessageTypes['propertyUpdate'])
+            {
+              self$handlePropertyUpdate(data)
+            }
+          else
+            {
+              warning("invalid message received: ", data)
+            }
+        },
+        error = function(e) {
+          cat(sprintf("Error occured when handle the message: %s\n", msg$data))
         }
-      else
-      if (data$type == QWebChannelMessageTypes['response'])
-        {
-          self$handleResponse(data)
-        }
-      else
-      if (data$type == QWebChannelMessageTypes['propertyUpdate'])
-        {
-          self$handlePropertyUpdate(data)
-        }
-      else
-        {
-          warning("invalid message received: ", data)
-        }
+      )
+
     })
 
     # Initialize QWebChannel and build connection to C++ side
     self$exec(list(type = QWebChannelMessageTypes[['init']]), function(data) {
+      for (objectName in names(data)) {
+        object <- QObject$new(objectName, data[[objectName]], self)
+      }
+
+      # now unwrap properties, which might reference other registered objects
+      for (objectName in names(self$objects)) {
+        self$objects[[objectName]]$unwrapProperties()
+      }
 
       if (!is.null(initCallback)) {
         initCallback(self)
