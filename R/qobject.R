@@ -14,7 +14,7 @@ QObject <- R6::R6Class("QObject", lock_objects = FALSE,
 
     addSignal = function(signalData, isPropertyNotifySignal) {
       signalName <- signalData[[1L]]
-      signalIndex <- signalData[[2L]] + 1L
+      signalIndex <- as.character(signalData[[2L]] + 1L)
 
       private$objectSignalData[[signalIndex]] <- signalData
 
@@ -24,7 +24,7 @@ QObject <- R6::R6Class("QObject", lock_objects = FALSE,
             stop(paste0("Bad callback given to connect to signal ", signalName))
           }
 
-          if (signalIndex > length(private$objectSignals)) {
+          if (! signalIndex %in% names(private$objectSignals)) {
             private$objectSignals[[signalIndex]] <- list()
           }
           private$objectSignals[[signalIndex]] <- append(private$objectSignals[[signalIndex]], callback)
@@ -33,9 +33,9 @@ QObject <- R6::R6Class("QObject", lock_objects = FALSE,
             # only required for "pure" signals, handled separately for properties in propertyUpdate
             # also note that we always get notified about the destroyed signal
             private$webChannel$exec(list(
-              type = QWebChannelMessageTypes["connectToSignal"],
+              type = QWebChannelMessageTypes[["connectToSignal"]],
               object = self$id,
-              signal = signalIndex - 1L
+              signal = as.integer(signalIndex) - 1L
             ))
           }
         },
@@ -44,7 +44,7 @@ QObject <- R6::R6Class("QObject", lock_objects = FALSE,
             stop(paste0("Bad callback given to disconnect to signal ", signalName))
           }
 
-          if (signalIndex > length(private$objectSignals)) {
+          if (! signalIndex %in% names(private$objectSignals)) {
             private$objectSignals[[signalIndex]] <- list()
           }
 
@@ -56,9 +56,9 @@ QObject <- R6::R6Class("QObject", lock_objects = FALSE,
           if (!isPropertyNotifySignal && length(private$objectSignals[[signalIndex]]) == 0) {
             # only required for "pure" signals, handled separately for properties in propertyUpdate
             private$webChannel$exec(list(
-              type = QWebChannelMessageTypes["disconnectFromSignal"],
+              type = QWebChannelMessageTypes[["disconnectFromSignal"]],
               object = self$id,
-              signal = signalIndex - 1L
+              signal = as.integer(signalIndex) - 1L
             ))
           }
         }
@@ -67,11 +67,14 @@ QObject <- R6::R6Class("QObject", lock_objects = FALSE,
 
     # Invokes all callbacks for the given signalname. Also works for property notify callbacks.
     invokeSignalCallbacks = function(signalName, signalArgs) {
-      stopifnot(is.numeric(signalName))
+      # FIXME: private$objectSignals 应该当作字典用，所以 signalName 应该是字符串才对！
+      # JavaScript 中，Object 下标运算会自动将数字转换出字符串！
+      signalName <- as.character(signalName)
       if (!is.list(signalArgs)) {
         stop(paste0("Arguments are not wrapped as a list for signal ", private$objectSignalData[[signalName]][[1L]]))
       }
       # signalName means signalIndex
+      # TODO: 测试超出下标范围的信号
       connections <-  private$objectSignals[[signalName]]
       if (length(connections) != 0) {
         for (callback in connections) {
@@ -108,7 +111,7 @@ QObject <- R6::R6Class("QObject", lock_objects = FALSE,
           }
         }
         private$webChannel$exec(list(
-          type = QWebChannelMessageTypes["invokeMethod"],
+          type = QWebChannelMessageTypes[["invokeMethod"]],
           object = self$id,
           method = methodIdx,
           args = args_to_send
@@ -166,7 +169,7 @@ QObject <- R6::R6Class("QObject", lock_objects = FALSE,
             valueToSend <- list(id = valueToSend$id)
           }
           private$webChannel$exec(list(
-              type = QWebChannelMessageTypes["setProperty"],
+              type = QWebChannelMessageTypes[["setProperty"]],
               object = self$id,
               property = propertyIndex - 1L, # Convert to 0-based indexing
               value = valueToSend
@@ -270,12 +273,12 @@ QObject <- R6::R6Class("QObject", lock_objects = FALSE,
         # property cache is updated before the callbacks are invoked.
 
         # Convert signalName to 1-based indexing
-        private$invokeSignalCallbacks(strtoi(signalName) + 1L, signals[[signalName]])
+        private$invokeSignalCallbacks(as.character(strtoi(signalName) + 1L), signals[[signalName]])
       }
     },
 
     signalEmitted = function(signalName, signalArgs) {
-      private$invokeSignalCallbacks(strtoi(signalName) + 1L, self$unwrapQObject(signalArgs))
+      private$invokeSignalCallbacks(as.character(strtoi(signalName) + 1L), self$unwrapQObject(signalArgs))
     }
   )
 )

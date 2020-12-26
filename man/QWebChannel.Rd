@@ -28,7 +28,9 @@ QWebChannel is used to communicate with QWebChannel C++ Client
 \item \href{#method-exec}{\code{QWebChannel$exec()}}
 \item \href{#method-send}{\code{QWebChannel$send()}}
 \item \href{#method-debug}{\code{QWebChannel$debug()}}
+\item \href{#method-handleSignal}{\code{QWebChannel$handleSignal()}}
 \item \href{#method-handleResponse}{\code{QWebChannel$handleResponse()}}
+\item \href{#method-handlePropertyUpdate}{\code{QWebChannel$handlePropertyUpdate()}}
 \item \href{#method-clone}{\code{QWebChannel$clone()}}
 }
 }
@@ -102,6 +104,14 @@ Handle response type message}
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-handleSignal"></a>}}
+\subsection{Method \code{handleSignal()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{QWebChannel$handleSignal(message)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-handleResponse"></a>}}
 \subsection{Method \code{handleResponse()}}{
 \subsection{Usage}{
@@ -115,6 +125,14 @@ Handle response type message}
 }
 \if{html}{\out{</div>}}
 }
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-handlePropertyUpdate"></a>}}
+\subsection{Method \code{handlePropertyUpdate()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{QWebChannel$handlePropertyUpdate(message)}\if{html}{\out{</div>}}
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-clone"></a>}}

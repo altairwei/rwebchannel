@@ -1,6 +1,8 @@
 library(rwebchannel)
 library(websocket)
 
+options(error = recover)
+
 baseUrl <- "ws://localhost:12345"
 cat(paste0("Connecting to WebSocket server at ", baseUrl, ".\n\n"))
 
@@ -17,7 +19,14 @@ socket$onError(function(event) {
 socket$onOpen(function(event) {
   cat("WebSocket connected, setting up QWebChannel.\n\n")
   QWebChannel$new(socket, function(channel) {
-    assign("core", channel$objects["core"], envir = .GlobalEnv)
+    assign("core", channel$objects[["core"]], envir = .GlobalEnv)
+    assign("send", function(text) {
+      cat("Sent message: ", text, "\n")
+      core$receiveText(text)
+    }, envir = .GlobalEnv)
+    core$sendText$connect(function(message) {
+      cat("Received message: ", message, "\n")
+    })
   })
 })
 

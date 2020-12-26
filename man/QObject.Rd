@@ -51,7 +51,7 @@ QObject is used to represent C++ Qt objects
 \if{html}{\out{<a id="method-unwrapQObject"></a>}}
 \subsection{Method \code{unwrapQObject()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{QObject$unwrapQObject(response = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{QObject$unwrapQObject(response)}\if{html}{\out{</div>}}
 }
 
 }

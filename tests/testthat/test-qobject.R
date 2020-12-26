@@ -416,6 +416,12 @@ test_that("Test invokeSignalCallbacks", {
   qobj$tagCreated$connect(func1)
   obj_private$invokeSignalCallbacks(1 + 1, list(list("Hello World")))
   expect_args(func1, 4, list("Hello World"))
+
+  # Test signal which hasn't any callback, it should be ignored.
+  # 2 = tagModified, 3 = styleCreated, 4 = documentCreated
+  obj_private$invokeSignalCallbacks(2 + 1, list(list("Hello World")))
+  obj_private$invokeSignalCallbacks(3 + 1, list(list("Hello World")))
+  obj_private$invokeSignalCallbacks(4 + 1, list(list("Hello World")))
 })
 
 

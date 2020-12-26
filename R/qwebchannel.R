@@ -48,17 +48,17 @@ QWebChannel <- R6::R6Class("QWebChannel", list(
             data = rjson::fromJSON(data, simplify = FALSE)
           }
           # Dispath to different message handler
-          if (data$type == QWebChannelMessageTypes['signal'])
+          if (data$type == QWebChannelMessageTypes[['signal']])
             {
               self$handleSignal(data)
             }
           else
-          if (data$type == QWebChannelMessageTypes['response'])
+          if (data$type == QWebChannelMessageTypes[['response']])
             {
               self$handleResponse(data)
             }
           else
-          if (data$type == QWebChannelMessageTypes['propertyUpdate'])
+          if (data$type == QWebChannelMessageTypes[['propertyUpdate']])
             {
               self$handlePropertyUpdate(data)
             }
@@ -69,6 +69,8 @@ QWebChannel <- R6::R6Class("QWebChannel", list(
         },
         error = function(e) {
           cat(sprintf("Error occured when handle the message: %s\n", msg$data))
+          cat(.makeMessage(e))
+          cat(str(e))
         }
       )
 
