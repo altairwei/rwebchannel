@@ -66,11 +66,29 @@ test_that("Test exec", {
 })
 
 
+test_that("Test send", {
+  trans <- FakeTransport$new()
+  channel <- QWebChannel$new(trans)
+  expect_called(trans$send, 1)
+
+  channel$send(list(A = iconv("这是中文", from = "UTF-8", to = "gbk")))
+  expect_args(trans$send, 2, rjson::toJSON(
+    list(A = iconv("这是中文", from = "UTF-8", to = "gbk"))
+  ))
+})
+
+
 obj_data = rjson::fromJSON('
 {
   "properties": [
     [0, "Title", [1, 5], "Hello World"],
     [1, "GUID", [1, 6], "7bb5a78d-2f21-44ad-ad50-2f7e52437133"]
+  ],
+  "methods": [
+    ["deleteLater", 3],
+    ["deleteLater()", 3],
+    ["DocumentsFromSQLWhere", 5],
+    ["DocumentsFromSQLWhere()", 5]
   ],
   "signals": [
     ["destroyed", 0],
@@ -151,6 +169,62 @@ test_that("Test handleResponse", {
   expect_args(func2, 1, "first exec resp")
 })
 
+test_that("Test complex handleResponse", {
+  resp_data = rjson::fromJSON('
+{
+  "data": [
+    {
+      "__QObject*__": true,
+      "data": {
+        "properties": [
+          [0, "Title", [1, 4], "Hello World"],
+          [1, "GUID", [1, 5], "5e0f57b0-d53c-4002-8bdc-57884ccfb7b9"]
+        ],
+        "signals": [
+          ["tagCreated", 0],
+          ["tagModified", 1],
+          ["styleCreated", 2],
+          ["documentCreated", 3],
+          ["destroyed", 6]
+        ]
+      },
+      "id": "{2e34b2d4-8804-4ab7-bf45-7cc452f5f6d5}"
+    },
+    {
+      "__QObject*__": true,
+      "data": {
+        "properties": [
+          [0, "Title", [1, 4], "Hahahahaha"],
+          [1, "GUID", [1, 5], "b97eee40-8d04-4788-a6d1-b93deb9a0801"]
+        ],
+        "signals": [
+          ["tagCreated", 0],
+          ["tagModified", 1],
+          ["styleCreated", 2],
+          ["documentCreated", 3],
+          ["destroyed", 6]
+        ]
+      },
+      "id": "{2f84de23-98df-4fba-93d4-5a323ce6addf}"
+    }
+  ],
+  "id":  2,
+  "type":  10
+}', simplify = FALSE)
+
+  trans <- FakeTransport$new()
+  webChannel <- QWebChannel$new(trans)
+  qobj <- QObject$new("Database", obj_data, webChannel)
+
+  func1 <- mockery::mock()
+  qobj$DocumentsFromSQLWhere("DOCUMENT_LOCATION like '/My Notes/'", func1)
+
+  webChannel$handleResponse(resp_data)
+  expect_null(webChannel$execCallbacks[["2"]])
+  expect_called(func1, 1)
+  expect_equal(mock_args(func1)[[1]][[1]][[1]]$Title, "Hello World")
+  expect_equal(mock_args(func1)[[1]][[1]][[2]]$Title, "Hahahahaha")
+})
 
 test_that("Test handlePropertyUpdate", {
   prop_data = rjson::fromJSON('

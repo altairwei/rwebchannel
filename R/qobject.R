@@ -119,7 +119,13 @@ QObject <- R6::R6Class("QObject", lock_objects = FALSE,
           if (!is.null(response)) {
             result <- self$unwrapQObject(response)
             if (!is.null(callback)) {
-              callback(result);
+              tryCatch(callback(result),
+                error = function(e) {
+                  cat(sprintf(
+                    "Error occurred when handling callback of %s\n", methodName))
+                  cat(.makeMessage(e))
+                }
+              )
             }
           }
         })
@@ -138,7 +144,7 @@ QObject <- R6::R6Class("QObject", lock_objects = FALSE,
       }
       private$propertyCache[[propertyIndex]] <- propertyInitValue
 
-      if (!is.null(notifySignalData)) {
+      if (!is.null(notifySignalData) && length(notifySignalData) > 0) {
         if (notifySignalData[[1L]] == 1) {
           # signal name is optimized away, reconstruct the actual name
           notifySignalData[[1L]] <- paste0(propertyName, "Changed")

@@ -115,7 +115,7 @@ test_that("Test addMethod", {
   qobj$deleteLater()
   expect_called(webChannel$exec, 1)
   expect_equal(mock_args(webChannel$exec)[[1]][[1]], list(
-    type = QWebChannelMessageTypes["invokeMethod"],
+    type = QWebChannelMessageTypes[["invokeMethod"]],
     object = "WizExplorerApp",
     method = 3,
     args = list()
@@ -124,7 +124,7 @@ test_that("Test addMethod", {
   qobj$SetSavingDocument(FALSE)
   expect_called(webChannel$exec, 2)
   expect_equal(mock_args(webChannel$exec)[[2]][[1]], list(
-    type = QWebChannelMessageTypes["invokeMethod"],
+    type = QWebChannelMessageTypes[["invokeMethod"]],
     object = "WizExplorerApp",
     method = 12,
     args = list(FALSE)
@@ -133,7 +133,7 @@ test_that("Test addMethod", {
   qobj$GetToken("test")
   expect_called(webChannel$exec, 3)
   expect_equal(mock_args(webChannel$exec)[[3]][[1]], list(
-    type = QWebChannelMessageTypes["invokeMethod"],
+    type = QWebChannelMessageTypes[["invokeMethod"]],
     object = "WizExplorerApp",
     method = 18,
     args = list("test")
@@ -142,7 +142,7 @@ test_that("Test addMethod", {
   qobj$copyLink("https://www.test.cn")
   expect_called(webChannel$exec, 4)
   expect_equal(mock_args(webChannel$exec)[[4]][[1]], list(
-    type = QWebChannelMessageTypes["invokeMethod"],
+    type = QWebChannelMessageTypes[["invokeMethod"]],
     object = "WizExplorerApp",
     method = 21,
     args = list("https://www.test.cn")
@@ -152,7 +152,7 @@ test_that("Test addMethod", {
   qobj$GetToken("test_callback", function(x) x)
   expect_called(webChannel$exec, 5)
   expect_equal(mock_args(webChannel$exec)[[5]][[1]], list(
-    type = QWebChannelMessageTypes["invokeMethod"],
+    type = QWebChannelMessageTypes[["invokeMethod"]],
     object = "WizExplorerApp",
     method = 18,
     args = list("test_callback")
@@ -164,7 +164,7 @@ test_that("Test addMethod", {
   qobj$GetToken("test_qobj", obj_to_send, obj_to_send2, function(x) x)
   expect_called(webChannel$exec, 6)
   expect_equal(mock_args(webChannel$exec)[[6]][[1]], list(
-    type = QWebChannelMessageTypes["invokeMethod"],
+    type = QWebChannelMessageTypes[["invokeMethod"]],
     object = "WizExplorerApp",
     method = 18,
     args = list("test_qobj", list(id = "ObjToSend"), list(id = "ObjToSend2"))
@@ -173,13 +173,15 @@ test_that("Test addMethod", {
 
 
 test_that("Test bindGetterSetter", {
+  # Properties without NOTIFY setting will produce empty notifySignalData
   obj_data = rjson::fromJSON('
 {
   "properties": [
     [0, "Title", [1, 2], "Hello World"],
     [1, "GUID", [1, 2], "7bb5a78d-2f21-44ad-ad50-2f7e52437133"],
     [2, "Database", [1, 5], {"__QObject*__": true, "data": {}, "id": "{81b0ce6f-a09f-4dcf-bd04-70b332760b33}"}],
-    [3, "Tag", [1, 2], null]
+    [3, "Tag", [1, 2], null],
+    [4, "FileName", [], "/path/to/file"]
   ]
 }', simplify = FALSE)
 
@@ -196,12 +198,13 @@ test_that("Test bindGetterSetter", {
   expect_equal(qobj$Title, "Hello World")
   expect_equal(qobj$GUID, "7bb5a78d-2f21-44ad-ad50-2f7e52437133")
   expect_true(is.na(qobj$Tag))
+  expect_equal(qobj$FileName, "/path/to/file")
 
   qobj$Title <- "Haha"
   expect_equal(qobj$Title, "Haha")
   expect_called(webChannel$exec, 1)
   expect_equal(mock_args(webChannel$exec)[[1]][[1]], list(
-    type = QWebChannelMessageTypes["setProperty"],
+    type = QWebChannelMessageTypes[["setProperty"]],
     object = "WizDocument",
     property = 0,
     value = "Haha"
@@ -211,7 +214,7 @@ test_that("Test bindGetterSetter", {
   expect_equal(qobj$Title, "Haha")
   expect_called(webChannel$exec, 2)
   expect_equal(mock_args(webChannel$exec)[[2]][[1]], list(
-    type = QWebChannelMessageTypes["setProperty"],
+    type = QWebChannelMessageTypes[["setProperty"]],
     object = "WizDocument",
     property = 1,
     value = "882fb189-6390-420e-8a30-be44fc24a577"
@@ -221,7 +224,7 @@ test_that("Test bindGetterSetter", {
   qobj$Database <- obj_to_send
   expect_called(webChannel$exec, 3)
   expect_equal(mock_args(webChannel$exec)[[3]][[1]], list(
-    type = QWebChannelMessageTypes["setProperty"],
+    type = QWebChannelMessageTypes[["setProperty"]],
     object = "WizDocument",
     property = 2,
     value = list(id = "ObjToSend")
@@ -266,7 +269,7 @@ test_that("Test addSignal", {
   qobj$tagCreated$connect(connect_callback)
   expect_called(webChannel$exec, 1)
   expect_equal(mock_args(webChannel$exec)[[1]][[1]], list(
-    type = QWebChannelMessageTypes["connectToSignal"],
+    type = QWebChannelMessageTypes[["connectToSignal"]],
     object = "Database",
     signal = 0
   ))
@@ -274,7 +277,7 @@ test_that("Test addSignal", {
   qobj$tagModified$connect(connect_callback)
   expect_called(webChannel$exec, 2)
   expect_equal(mock_args(webChannel$exec)[[2]][[1]], list(
-    type = QWebChannelMessageTypes["connectToSignal"],
+    type = QWebChannelMessageTypes[["connectToSignal"]],
     object = "Database",
     signal = 1
   ))
@@ -282,7 +285,7 @@ test_that("Test addSignal", {
   qobj$styleCreated$connect(connect_callback)
   expect_called(webChannel$exec, 3)
   expect_equal(mock_args(webChannel$exec)[[3]][[1]], list(
-    type = QWebChannelMessageTypes["connectToSignal"],
+    type = QWebChannelMessageTypes[["connectToSignal"]],
     object = "Database",
     signal = 2
   ))
@@ -290,7 +293,7 @@ test_that("Test addSignal", {
   qobj$documentCreated$connect(connect_callback)
   expect_called(webChannel$exec, 4)
   expect_equal(mock_args(webChannel$exec)[[4]][[1]], list(
-    type = QWebChannelMessageTypes["connectToSignal"],
+    type = QWebChannelMessageTypes[["connectToSignal"]],
     object = "Database",
     signal = 3
   ))
@@ -313,7 +316,7 @@ test_that("Test addSignal", {
   qobj$tagCreated$disconnect(connect_callback)
   expect_called(webChannel$exec, 5)
   expect_equal(mock_args(webChannel$exec)[[5]][[1]], list(
-    type = QWebChannelMessageTypes["disconnectFromSignal"],
+    type = QWebChannelMessageTypes[["disconnectFromSignal"]],
     object = "Database",
     signal = 0
   ))
@@ -323,7 +326,7 @@ test_that("Test addSignal", {
   qobj$tagCreated$disconnect(disconnect_callback)
   expect_called(webChannel$exec, 7)
   expect_equal(mock_args(webChannel$exec)[[7]][[1]], list(
-    type = QWebChannelMessageTypes["disconnectFromSignal"],
+    type = QWebChannelMessageTypes[["disconnectFromSignal"]],
     object = "Database",
     signal = 0
   ))
@@ -336,7 +339,7 @@ test_that("Test addSignal", {
   qobj$tagCreated$disconnect(disconnect_callback2)
   expect_called(webChannel$exec, 10)
   expect_equal(mock_args(webChannel$exec)[[10]][[1]], list(
-    type = QWebChannelMessageTypes["disconnectFromSignal"],
+    type = QWebChannelMessageTypes[["disconnectFromSignal"]],
     object = "Database",
     signal = 0
   ))

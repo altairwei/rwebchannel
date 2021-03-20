@@ -68,9 +68,11 @@ QWebChannel <- R6::R6Class("QWebChannel", list(
             }
         },
         error = function(e) {
-          cat(sprintf("Error occured when handle the message: %s\n", msg$data))
+          debugfile <- tempfile(fileext = ".json")
+          cat(rjson::toJSON(data, indent=2), file = debugfile)
+          cat(sprintf("Error occured when handling the message: %s ...\n", substr(msg$data, 1, 40)))
           cat(.makeMessage(e))
-          cat(str(e))
+          cat(sprintf("Message data haved been saved to %s \n", debugfile))
         }
       )
 
