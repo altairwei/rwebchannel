@@ -1,8 +1,6 @@
 library(rwebchannel)
 library(websocket)
 
-options(error = recover)
-
 baseUrl <- "ws://localhost:12345"
 cat(paste0("Connecting to WebSocket server at ", baseUrl, ".\n\n"))
 
@@ -32,3 +30,18 @@ socket$onOpen(function(event) {
 
 socket$connect()
 
+
+start <- function() {
+  while(TRUE) {
+    cat("Enter: ")
+    input <- readLines("stdin", 1)
+    if (input == "exit")
+      break;
+    send(input)
+    later::run_now(3L)
+  }
+}
+
+while(TRUE) {
+  later::run_now(1L)
+}

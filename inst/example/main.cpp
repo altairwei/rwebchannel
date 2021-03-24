@@ -64,6 +64,7 @@
 #include <QProcess>
 #include <QStringList>
 #include <QDir>
+#include <QProcess>
 
 int main(int argc, char** argv)
 {
@@ -98,7 +99,7 @@ int main(int argc, char** argv)
 
     // open a browser window with the client HTML page
     QUrl url = QUrl::fromLocalFile("index.html");
-    QDesktopServices::openUrl(url);
+    //QDesktopServices::openUrl(url);
 
     QString index_R_filename = QDir::current().absoluteFilePath("index.R");
 
@@ -107,6 +108,11 @@ int main(int argc, char** argv)
         "Try to open an R terminal and type: source('%1')"
     ).arg(index_R_filename));
     dialog.show();
+
+    // QProcess proc;
+    // QStringList args;
+    // args << "--no-save" << "--slave" << "-f" << index_R_filename;
+    // proc.startDetached("R.exe", args);
 
     return app.exec();
 }
