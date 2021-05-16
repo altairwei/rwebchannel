@@ -105,14 +105,16 @@ int main(int argc, char** argv)
 
     dialog.displayMessage(QString(
         "Initialization complete.\n"
-        "Try to open an R terminal and type: source('%1')"
+        "Try to open a terminal and type: Rscript %1"
     ).arg(index_R_filename));
     dialog.show();
 
     // QProcess proc;
     // QStringList args;
-    // args << "--no-save" << "--slave" << "-f" << index_R_filename;
-    // proc.startDetached("R.exe", args);
+    // args << "-Command" << "Rscript.exe" << index_R_filename;
+    // proc.startDetached("powershell.exe", args);
 
-    return app.exec();
+    int ret = app.exec();
+
+    return ret;
 }

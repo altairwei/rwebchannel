@@ -1,6 +1,15 @@
 library(rwebchannel)
 library(websocket)
 
+start <- function() {
+  cat("Enter: ")
+  input <- readLines("stdin", 1)
+  if (input == "exit")
+    break;
+  send(input)
+  later::later(start)
+}
+
 baseUrl <- "ws://localhost:12345"
 cat(paste0("Connecting to WebSocket server at ", baseUrl, ".\n\n"))
 
@@ -24,24 +33,13 @@ socket$onOpen(function(event) {
     }, envir = .GlobalEnv)
     core$sendText$connect(function(message) {
       cat("Received message: ", message, "\n")
+      start()
     })
   })
 })
 
 socket$connect()
 
-
-start <- function() {
-  while(TRUE) {
-    cat("Enter: ")
-    input <- readLines("stdin", 1)
-    if (input == "exit")
-      break;
-    send(input)
-    later::run_now(3L)
-  }
-}
-
-while(TRUE) {
-  later::run_now(1L)
+while (TRUE) {
+  later::run_now()
 }
