@@ -5,13 +5,15 @@ start <- function() {
   cat("Enter: ")
   input <- readLines("stdin", 1)
   if (input == "exit")
-    break;
+    quit()
+  if (input == "")
+    return()
   send(input)
   later::later(start)
 }
 
 baseUrl <- "ws://localhost:12345"
-cat(paste0("Connecting to WebSocket server at ", baseUrl, ".\n\n"))
+cat(paste0("Connecting to WebSocket server at ", baseUrl, ".\n"))
 
 socket <- WebSocket$new(baseUrl, autoConnect = FALSE)
 
@@ -20,11 +22,11 @@ socket$onClose(function(event) {
 })
 
 socket$onError(function(event) {
-  cat(paste0("web channel error:", event$message, "\n\n"))
+  cat(paste0("web channel error:", event$message, "\n"))
 })
 
 socket$onOpen(function(event) {
-  cat("WebSocket connected, setting up QWebChannel.\n\n")
+  cat("WebSocket connected, setting up QWebChannel.\n")
   QWebChannel$new(socket, function(channel) {
     assign("core", channel$objects[["core"]], envir = .GlobalEnv)
     assign("send", function(text) {
